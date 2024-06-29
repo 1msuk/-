@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Saver with Auth (Persistent)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #postForm, #loginForm, #signupForm {
+            background-color: #e6f2ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        #posts {
+            margin-top: 20px;
+        }
+        .post {
+            background-color: #f0f8ff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="authSection">
+        <div id="loginForm">
+            <h2>Login</h2>
+            <input type="text" id="loginUsername" placeholder="Username">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        <div id="signupForm">
+            <h2>Sign Up</h2>
+            <input type="text" id="signupUsername" placeholder="Username">
+            <input type="password" id="signupPassword" placeholder="Password">
+            <button onclick="signup()">Sign Up</button>
+        </div>
+    </div>
+
+    <div id="postSection" class="hidden">
+        <h2>Create a Post</h2>
+        <div id="postForm">
+            <textarea id="postContent" rows="4" cols="50" placeholder="Enter your post here"></textarea>
+            <button onclick="savePost()">Save Post</button>
+        </div>
+        <div id="posts"></div>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let users = [];
+        let posts = [];
+
+        // Load data from localStorage on page load
+        function loadData() {
+            const storedUsers = localStorage.getItem('users');
+            const storedPosts = localStorage.getItem('posts');
+            const storedCurrentUser = localStorage.getItem('currentUser');
+
+            if (storedUsers) users = JSON.parse(storedUsers);
+            if (storedPosts) posts = JSON.parse(storedPosts);
+            if (storedCurrentUser) {
+                currentUser = JSON.parse(storedCurrentUser);
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('postSection').classList.remove('hidden');
+                displayPosts();
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('posts', JSON.stringify(posts));
+            if (currentUser) {
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            } else {
+                localStorage.removeItem('currentUser');
+            }
+        }
+
+        function signup() {
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+            if (username && password) {
+                users.push({ username, password });
+                saveData();
+                alert('Signup successful! Please login.');
+            } else {
+                alert('Please enter both username and password.');
+            }
+        }
+
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = user;
+                saveData();
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('postSection').classList.remove('hidden');
+                displayPosts();
+            } else {
+                alert('Invalid username or password.');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            saveData();
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('postSection').classList.add('hidden');
+        }
+
+        function savePost() {
+            const content = document.getElementById('postContent').value;
+            if (content) {
+                posts.push({ user: currentUser.username, content });
+                document.getElementById('postContent').value = '';
+                saveData();
+                displayPosts();
+            }
+        }
+
+        function displayPosts() {
+            const postsDiv = document.getElementById('posts');
+            postsDiv.innerHTML = '';
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.textContent = `${post.user}: ${post.content}`;
+                postsDiv.appendChild(postElement);
+            });
+        }
+
+        // Load data when the page loads
+        loadData();
+    </script>
+</body>
+</html>
